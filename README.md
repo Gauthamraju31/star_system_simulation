@@ -1,2 +1,12 @@
-# star_system_simulation
-Simulation code for solar system
+# SOLAR SYSTEM SIMULATION
+
+This is a simulation code for a star and a planet.
+
+![Demo](demo.gif)
+
+# How to run
+
+```
+make
+./solar_system
+```

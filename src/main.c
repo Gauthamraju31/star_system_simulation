@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include "x11.h"
-#include "gravity.h"
+#include "core.h"
 
 #define WIDTH 720
 #define HEIGHT 720
@@ -20,69 +20,33 @@ void draw_body(Sphere *body, X11Disp *solar_display)
 
        XSetForeground(solar_display->dis, solar_display->gc, body_color);
 
-       if (body->make_trail)
-       {
-              XArc trail_arcs[body->trail_length + 1];
-              trail_arcs[body->trail_length + 1].x = body_offset_x;
-              trail_arcs[body->trail_length + 1].y = body_offset_y;
-              trail_arcs[body->trail_length + 1].width = body_offset_r;
-              trail_arcs[body->trail_length + 1].height = body_offset_r;
-              trail_arcs[body->trail_length + 1].angle1 = 0;
-              trail_arcs[body->trail_length + 1].angle2 = 360 * 64;
-              for (int i = 0; i < body->trail_length - 1; i++)
-              {
-                     int trail_offset_x = (int)(body->trail[i].x * WIDTH) / 3 + WIDTH / 2;
-                     int trail_offset_y = (int)(body->trail[i].y * HEIGHT) / 3 + HEIGHT / 2;
-                     int trail_offset_r = (int)(body->radius * HEIGHT / 25);
-
-                     trail_arcs[i].x = trail_offset_x - trail_offset_r;
-                     trail_arcs[i].y = trail_offset_y - trail_offset_r;
-                     trail_arcs[i].width = trail_offset_r * 2;
-                     trail_arcs[i].height = trail_offset_r * 2;
-                     trail_arcs[i].angle1 = 0;
-                     trail_arcs[i].angle2 = 360 * 64;
-              }
-
-              XFillArcs(solar_display->dis, solar_display->win, solar_display->gc, trail_arcs, body->trail_length);
-       }
-       else
-       {
-              XFillArc(solar_display->dis, solar_display->win, solar_display->gc,
-                       body_offset_x - body_offset_r, body_offset_y - body_offset_r,
-                       body_offset_r * 2, body_offset_r * 2, 0, 360 * 64);
-       }
+       XFillArc(solar_display->dis, solar_display->win, solar_display->gc,
+                body_offset_x - body_offset_r, body_offset_y - body_offset_r,
+                body_offset_r * 2, body_offset_r * 2, 0, 360 * 64);
+       
 }
 
 int main()
 {
-       Sphere *star, *planet1, *planet2;
+       Sphere *star, *planet;
 
        // Star parameters
        Vector pos = {0, 0, 0};
        Color color = {255, 255, 0, 255};
        Vector mom = {0, 0, 0};
 
-       star = sphere_create(pos, 0.2, color, 1000, mom, 0, 5);
+       star = sphere_create(pos, 0.2, color, 1000, mom);
 
        // Planet 1 parameters
        pos.x = 1;
        mom.y = 30;
        color.r = 0;
-       planet1 = sphere_create(pos, 0.05, color, 1, mom, 0, 5);
-
-       // Planet 2 parameters
-       pos.x = 0;
-       pos.y = 0.5;
-       mom.y = 0;
-       mom.x = 20;
-       color.g = 0;
-       color.b = 255;
-       planet2 = sphere_create(pos, 0.075, color, 1, mom, 0, 5);
+       planet = sphere_create(pos, 0.05, color, 1, mom);
 
        // Step initialization
        const float dt = 0.0001;
        float t = 0;
-       int steps = 10000;
+       int steps = 100000;
 
        // Window Initialization
        // XEvent event;
@@ -110,45 +74,18 @@ int main()
               // }
 
               //Calculate force for star
-              Vector tmp_force = {0, 0, 0};
-              tmp_force = gforce(star, planet1);
-              star->force = gforce(star, planet2);
-              star->force.x += tmp_force.x;
-              star->force.y += tmp_force.y;
-              star->force.z += tmp_force.z;
+              star->force = gforce(star, planet);
 
-              //Calculate force for planet1
-              tmp_force = gforce(planet1, star);
-              planet1->force = gforce(planet1, planet2);
-              planet1->force.x += tmp_force.x;
-              planet1->force.y += tmp_force.y;
-              planet1->force.z += tmp_force.z;
-
-              //Calculate force for planet2
-              tmp_force = gforce(planet2, star);
-              planet2->force = gforce(planet2, planet1);
-              planet2->force.x += tmp_force.x;
-              planet2->force.y += tmp_force.y;
-              planet2->force.z += tmp_force.z;
-
-              // star->force = gforce(star, planet1) + gforce(star, planet2);
-              // planet1->force = gforce(planet1, star) + gforce(planet1, planet2);
-              // planet2->force = gforce(planet2, star) + gforce(planet2, planet1);
+              //Calculate force for planet
+              planet->force = gforce(planet, star);
 
               //Update momentum
               update_momentum(star, dt);
-              update_momentum(planet1, dt);
-              update_momentum(planet2, dt);
+              update_momentum(planet, dt);
 
               //Update position
               update_position(star, dt);
-              update_position(planet1, dt);
-              update_momentum(planet2, dt);
-
-              //Update trail
-              update_trail(star);
-              update_trail(planet1);
-              update_trail(planet2);
+              update_position(planet, dt);
 
               t += dt;
               steps--;
@@ -165,12 +102,9 @@ int main()
               // }
 
               // Draw the star and planets
-              {
-                     redraw_x(&solar_display);
-                     draw_body(star, &solar_display);
-                     draw_body(planet1, &solar_display);
-                     draw_body(planet2, &solar_display);
-              }
+              redraw_x(&solar_display);
+              draw_body(star, &solar_display);
+              draw_body(planet, &solar_display);
 
               // printf("\nPosition of Star %0.3f:%0.3f:%0.3f, Poisiton of Planet %0.3f:%0.3f:%0.3f\n", star->position.x, star->position.y, star->position.z,
               //        planet->position.x, planet->position.y, planet->position.z);
@@ -181,8 +115,7 @@ int main()
 
 // end:
        free(star);
-       free(planet1);
-       free(planet2);
+       free(planet);
        close_x(&solar_display);
        return 0;
 }

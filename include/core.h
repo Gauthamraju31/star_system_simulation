@@ -33,7 +33,7 @@ typedef struct _Sphere{
   Vector *trail;
 }Sphere;
 
-Sphere* sphere_create(PosVec position, float radius, Color color, float mass, MomVec momentum, unsigned int make_trail, unsigned int trail_length);
+Sphere* sphere_create(PosVec position, float radius, Color color, float mass, MomVec momentum);
 
 void sphere_free(Sphere *sphere);
 
@@ -42,5 +42,3 @@ Vector gforce(Sphere* body1, Sphere* body2);
 void update_momentum(Sphere *body, float dt);
 
 void update_position(Sphere *body, float dt);
-
-void update_trail(Sphere *sphere);

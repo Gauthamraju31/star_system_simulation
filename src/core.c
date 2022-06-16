@@ -1,4 +1,4 @@
-#include "gravity.h"
+#include "core.h"
 
 #define GRAVITY_CONSTANT 1
 
@@ -23,7 +23,7 @@ Vector gforce(Sphere *p1, Sphere *p2)
   return force_vec;
 }
 
-Sphere *sphere_create(PosVec position, float radius, Color color, float mass, MomVec momentum, unsigned int make_trail, unsigned int trail_length)
+Sphere *sphere_create(PosVec position, float radius, Color color, float mass, MomVec momentum)
 {
   Sphere *sphere = (Sphere *)malloc(sizeof(Sphere));
   sphere->position = position;
@@ -34,43 +34,11 @@ Sphere *sphere_create(PosVec position, float radius, Color color, float mass, Mo
   sphere->force.y = 0;
   sphere->force.z = 0;
   sphere->color = color;
-  sphere->make_trail = make_trail;
-  if (make_trail)
-  {
-    sphere->trail = (Vector *)malloc(sizeof(Vector) * trail_length);
-    sphere->trail_length = trail_length;
-    for (int i = 0; i < trail_length; i++)
-    {
-      sphere->trail[i].x = 0;
-      sphere->trail[i].y = 0;
-      sphere->trail[i].z = 0;
-    }
-  }
   return sphere;
-}
-
-void update_trail(Sphere *sphere)
-{
-  if (sphere->make_trail)
-  {
-    for (int i = 0; i < sphere->trail_length - 1; i++)
-    {
-      sphere->trail[i] = sphere->trail[i + 1];
-      // sphere->trail[i].y = sphere->trail[i + 1].y;
-      // sphere->trail[i].z = sphere->trail[i + 1].z;
-    }
-    sphere->trail[sphere->trail_length - 1] = sphere->position;
-    // sphere->trail[sphere->trail_length - 1].y = sphere->position.y;
-    // sphere->trail[sphere->trail_length - 1].z = sphere->position.z;
-  }
 }
 
 void sphere_free(Sphere *sphere)
 {
-  if (sphere->make_trail)
-  {
-    free(sphere->trail);
-  }
   free(sphere);
 }
 
@@ -97,12 +65,12 @@ int test()
   Color color = {255, 255, 0};
   Vector mom = {0, 0, 0};
 
-  star = sphere_create(pos, 0.2, color, 1000, mom, 1, 30);
+  star = sphere_create(pos, 0.2, color, 1000, mom);
 
   // Planet parameters
   pos.x = 1;
   mom.y = 30;
-  planet = sphere_create(pos, 0.2, color, 1, mom, 1, 100);
+  planet = sphere_create(pos, 0.2, color, 1, mom);
 
   float dt = 0.0001;
   float t = 0;
